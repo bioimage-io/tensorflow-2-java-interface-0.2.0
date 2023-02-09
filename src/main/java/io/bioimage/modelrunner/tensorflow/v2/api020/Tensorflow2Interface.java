@@ -1,21 +1,22 @@
-package org.bioimageanalysis.icy.deeplearning.tensorflow.v2.api020;
+package io.bioimage.modelrunner.tensorflow.v2.api020;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
+import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.tensor.Tensor;
+import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.ImgLib2Builder;
+import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.TensorBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bioimageanalysis.icy.deeplearning.tensor.Tensor;
-import org.bioimageanalysis.icy.deeplearning.tensorflow.v2.api020.tensor.ImgLib2Builder;
-import org.bioimageanalysis.icy.deeplearning.tensorflow.v2.api020.tensor.TensorBuilder;
-import org.bioimageanalysis.icy.deeplearning.engine.DeepLearningEngineInterface;
-import org.bioimageanalysis.icy.deeplearning.exceptions.LoadModelException;
-import org.bioimageanalysis.icy.deeplearning.exceptions.RunModelException;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.proto.framework.MetaGraphDef;
 import org.tensorflow.proto.framework.SignatureDef;
 import org.tensorflow.proto.framework.TensorInfo;
-
-import com.google.protobuf.InvalidProtocolBufferException;
 
 public class Tensorflow2Interface implements DeepLearningEngineInterface
 {
