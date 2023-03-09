@@ -65,6 +65,9 @@ import org.tensorflow.types.TUint8;
 import org.tensorflow.types.family.TType;
 
 /**
+ * A TensorFlow 2 {@link Tensor} builder from {@link Img} and
+ * {@link io.bioimage.modelrunner.tensor.Tensor} objects.
+ * 
  * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
 public final class TensorBuilder {
@@ -78,10 +81,12 @@ public final class TensorBuilder {
 	 * Creates {@link Tensor} instance with the same size and information as the
 	 * given {@link io.bioimage.modelrunner.tensor.Tensor}.
 	 * 
-	 * @param tensor The sequence which the created tensor is filled with.
-	 * @return The created tensor.
-	 * @throws IllegalArgumentException If the type of the sequence is not
-	 *           supported.
+	 * @param tensor 
+	 * 	The dlmodel-runner {@link io.bioimage.modelrunner.tensor.Tensor} that is
+	 * 	going to be converted into a {@link Tensor} tensor
+	 * @return The created {@link Tensor} tensor.
+	 * @throws IllegalArgumentException If the type of the {@link io.bioimage.modelrunner.tensor.Tensor}
+	 * is not supported
 	 */
 	public static Tensor<? extends TType> build(
 		io.bioimage.modelrunner.tensor.Tensor tensor)
@@ -94,15 +99,18 @@ public final class TensorBuilder {
 	 * Creates {@link Tensor} instance with the same size and information as the
 	 * given {@link RandomAccessibleInterval}.
 	 * 
-	 * @param array The sequence which the created tensor is filled with.
-	 * @return The created tensor.
-	 * @throws IllegalArgumentException If the type of the sequence is not
-	 *           supported.
+	 * @param <T>
+	 * 	the ImgLib2 data types the {@link RandomAccessibleInterval} can be
+	 * @param array
+	 * 	the {@link RandomAccessibleInterval} that is going to be converted into
+	 *  a {@link Tensor} tensor
+	 * @return a {@link Tensor} tensor
+	 * @throws IllegalArgumentException if the type of the {@link RandomAccessibleInterval}
+	 *  is not supported
 	 */
 	public static <T extends Type<T>> Tensor<? extends TType> build(
 		RandomAccessibleInterval<T> array) throws IllegalArgumentException
 	{
-		// Create an Icy sequence of the same type of the tensor
 		if (Util.getTypeFromInterval(array) instanceof ByteType) {
 			return buildByte((RandomAccessibleInterval<ByteType>) array);
 		}
@@ -126,13 +134,13 @@ public final class TensorBuilder {
 
 	/**
 	 * Creates a {@link Tensor} of type {@link TUint8} from an
-	 * {@link RandomAccessibleInterval} of type {@link DataType#DT_INT8} or
-	 * {@link DataType#DT_UINT8}.
+	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
 	 * 
-	 * @param imgTensor The sequence to fill the tensor with.
-	 * @return The tensor filled with the image data.
-	 * @throws IllegalArgumentException If the type of the image is not
-	 *           compatible.
+	 * @param imgTensor 
+	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
+	 * @return The {@link Tensor} tensor filled with the {@link RandomAccessibleInterval} data.
+	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
+	 * not compatible
 	 */
 	private static Tensor<TUint8> buildByte(
 		RandomAccessibleInterval<ByteType> imgTensor)
@@ -167,14 +175,14 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TInt32} from an
-	 * {@link RandomAccessibleInterval} of type {@link DataType#DT_INT32} or
-	 * {@link DataType#DT_UINT32}.
+	 * Creates a {@link Tensor} of type {@link TUint8} from an
+	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
 	 * 
-	 * @param imgTensor The sequence to fill the tensor with.
-	 * @return The tensor filled with the image data.
-	 * @throws IllegalArgumentException If the type of the image is not
-	 *           compatible.
+	 * @param imgTensor 
+	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
+	 * @return The {@link Tensor} tensor filled with the {@link RandomAccessibleInterval} data.
+	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
+	 * not compatible
 	 */
 	private static Tensor<TInt32> buildInt(
 		RandomAccessibleInterval<IntType> imgTensor) throws IllegalArgumentException
@@ -208,13 +216,14 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TInt64} from an
-	 * {@link RandomAccessibleInterval} of type {@link DataType#DT_INT64}
+	 * Creates a {@link Tensor} of type {@link TUint8} from an
+	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
 	 * 
-	 * @param imgTensor The sequence to fill the tensor with.
-	 * @return The tensor filled with the image data.
-	 * @throws IllegalArgumentException If the type of the image is not
-	 *           compatible.
+	 * @param imgTensor 
+	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
+	 * @return The {@link Tensor} tensor filled with the {@link RandomAccessibleInterval} data.
+	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
+	 * not compatible
 	 */
 	private static Tensor<TInt64> buildLong(
 		RandomAccessibleInterval<LongType> imgTensor)
@@ -249,13 +258,14 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TFloat32} from an
-	 * {@link RandomAccessibleInterval} of type {@link DataType#DT_FLOAT}.
+	 * Creates a {@link Tensor} of type {@link TUint8} from an
+	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
 	 * 
-	 * @param imgTensor The sequence to fill the tensor with.
-	 * @return The tensor filled with the image data.
-	 * @throws IllegalArgumentException If the type of the image is not
-	 *           compatible.
+	 * @param imgTensor 
+	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
+	 * @return The {@link Tensor} tensor filled with the {@link RandomAccessibleInterval} data.
+	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
+	 * not compatible
 	 */
 	private static Tensor<TFloat32> buildFloat(
 		RandomAccessibleInterval<FloatType> imgTensor)
@@ -290,13 +300,14 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TFloat64} from an
-	 * {@link RandomAccessibleInterval} of type {@link DataType#DT_DOUBLE}.
+	 * Creates a {@link Tensor} of type {@link TUint8} from an
+	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
 	 * 
-	 * @param imgTensor The sequence to fill the tensor with.
-	 * @return The tensor filled with the image data.
-	 * @throws IllegalArgumentException If the type of the image is not
-	 *           compatible.
+	 * @param imgTensor 
+	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
+	 * @return The {@link Tensor} tensor filled with the {@link RandomAccessibleInterval} data.
+	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
+	 * not compatible
 	 */
 	private static Tensor<TFloat64> buildDouble(
 		RandomAccessibleInterval<DoubleType> imgTensor)
