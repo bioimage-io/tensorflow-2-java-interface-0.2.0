@@ -44,6 +44,7 @@ import net.imglib2.type.Type;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -56,7 +57,11 @@ import org.tensorflow.types.TUint8;
 import org.tensorflow.types.family.TType;
 
 /**
- * @author Carlos GArcia Lopez de Haro and Daniel Felipe Gonzalez Obando
+ * A {@link Img} builder for TensorFlow {@link Tensor} objects.
+ * Build ImgLib2 objects (backend of {@link io.bioimage.modelrunner.tensor.Tensor})
+ * from Tensorflow 2 {@link Tensor}
+ * 
+ * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
  */
 public final class ImgLib2Builder
 {
@@ -67,13 +72,22 @@ public final class ImgLib2Builder
     {
     }
 
+	/**    
+	 * Creates a {@link Img} from a given {@link Tensor} tensor
+	 * @param <T>
+	 * 	the possible ImgLib2 datatypes of the image
+	 * @param tensor 
+	 * 	The {@link Tensor} tensor data of datatype belonging to {@link TType} is read from.
+	 * @return The {@link Img} built from the {@link TType} tensor.
+	 * @throws IllegalArgumentException If the {@link TType} tensor type is not supported.
+	 */
     @SuppressWarnings("unchecked")
     public static <T extends Type<T>> Img<T> build(Tensor<? extends TType> tensor) throws IllegalArgumentException
     {
 		switch (tensor.dataType().name())
         {
             case TUint8.NAME:
-                return (Img<T>) buildFromTensorByte((Tensor<TUint8>) tensor);
+                return (Img<T>) buildFromTensorUByte((Tensor<TUint8>) tensor);
             case TInt32.NAME:
                 return (Img<T>) buildFromTensorInt((Tensor<TInt32>) tensor);
             case TFloat32.NAME:
@@ -87,12 +101,19 @@ public final class ImgLib2Builder
         }
     }
 
-    private static Img<ByteType> buildFromTensorByte(Tensor<TUint8> tensor)
+	/**
+	 * Builds a {@link Img} from a unsigned byte-typed {@link TUint8} tensor.
+	 * 
+	 * @param tensor 
+	 * 	The {@link TUint8} tensor data is read from.
+	 * @return The {@link Img} built from the tensor, of type {@link UnsignedByteType}.
+	 */
+    private static Img<UnsignedByteType> buildFromTensorUByte(Tensor<TUint8> tensor)
     {
     	long[] tensorShape = tensor.shape().asArray();
-    	final ImgFactory< ByteType > factory = new CellImgFactory<>( new ByteType(), 5 );
-        final Img< ByteType > outputImg = factory.create(tensorShape);
-    	Cursor<ByteType> tensorCursor= outputImg.cursor();
+    	final ImgFactory< UnsignedByteType > factory = new CellImgFactory<>( new UnsignedByteType(), 5 );
+        final Img< UnsignedByteType > outputImg = factory.create(tensorShape);
+    	Cursor<UnsignedByteType> tensorCursor= outputImg.cursor();
 		int totalSize = 1;
 		for (long i : tensorShape) {totalSize *= i;}
         byte[] flatArr = new byte[totalSize];
@@ -102,11 +123,21 @@ public final class ImgLib2Builder
 			long[] cursorPos = tensorCursor.positionAsLongArray();
         	int flatPos = IndexingUtils.multidimensionalIntoFlatIndex(cursorPos, tensorShape);
         	byte val = flatArr[flatPos];
-        	tensorCursor.get().set(val);
+			if (val < 0)
+				tensorCursor.get().set(256 + (int) val);
+			else
+				tensorCursor.get().set(val);
 		}
 	 	return outputImg;
     }
 
+	/**
+	 * Builds a {@link Img} from a unsigned int32-typed {@link TInt32} tensor.
+	 * 
+	 * @param tensor 
+	 * 	The {@link TInt32} tensor data is read from.
+	 * @return The {@link Img} built from the tensor, of type {@link IntType}.
+	 */
     private static Img<IntType> buildFromTensorInt(Tensor<TInt32> tensor)
     {
     	long[] tensorShape = tensor.shape().asArray();
@@ -127,6 +158,13 @@ public final class ImgLib2Builder
 	 	return outputImg;
     }
 
+	/**
+	 * Builds a {@link Img} from a unsigned float32-typed {@link TFloat32} tensor.
+	 * 
+	 * @param tensor 
+	 * 	The {@link TFloat32} tensor data is read from.
+	 * @return The {@link Img} built from the tensor, of type {@link FloatType}.
+	 */
     private static Img<FloatType> buildFromTensorFloat(Tensor<TFloat32> tensor)
     {
     	long[] tensorShape = tensor.shape().asArray();
@@ -147,6 +185,13 @@ public final class ImgLib2Builder
 	 	return outputImg;
     }
 
+	/**
+	 * Builds a {@link Img} from a unsigned float64-typed {@link TFloat64} tensor.
+	 * 
+	 * @param tensor 
+	 * 	The {@link TFloat64} tensor data is read from.
+	 * @return The {@link Img} built from the tensor, of type {@link DoubleType}.
+	 */
     private static Img<DoubleType> buildFromTensorDouble(Tensor<TFloat64> tensor)
     {
     	long[] tensorShape = tensor.shape().asArray();
@@ -167,6 +212,13 @@ public final class ImgLib2Builder
 	 	return outputImg;
     }
 
+	/**
+	 * Builds a {@link Img} from a unsigned int64-typed {@link TInt64} tensor.
+	 * 
+	 * @param tensor 
+	 * 	The {@link TInt64} tensor data is read from.
+	 * @return The {@link Img} built from the tensor, of type {@link LongType}.
+	 */
     private static  Img<LongType> buildFromTensorLong(Tensor<TInt64> tensor)
     {
     	long[] tensorShape = tensor.shape().asArray();
