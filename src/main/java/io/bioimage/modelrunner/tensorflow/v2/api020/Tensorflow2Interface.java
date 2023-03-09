@@ -52,6 +52,23 @@ import org.tensorflow.proto.framework.MetaGraphDef;
 import org.tensorflow.proto.framework.SignatureDef;
 import org.tensorflow.proto.framework.TensorInfo;
 
+/**
+ * Class to that communicates with the dl-model runner, see 
+ * @see <a href="https://github.com/bioimage-io/model-runner-java">dlmodelrunner</a>
+ * to execute Tensorflow 2 models with the Tensorflow 2 Java API 0.2.0,
+ *  https://github.com/tensorflow/java#tensorflowjava-version-support.
+ * This class implements the interface {@link DeepLearningEngineInterface} to get the 
+ * agnostic {@link io.bioimage.modelrunner.tensor.Tensor}, convert them into 
+ * {@link org.tensorflow.Tensor}, execute a Tensorflow 2 Deep Learning model on them and
+ * convert the results back to {@link io.bioimage.modelrunner.tensor.Tensor} to send them 
+ * to the main program in an agnostic manner.
+ * 
+ * {@link ImgLib2Builder}. Creates ImgLib2 images for the backend
+ *  of {@link io.bioimage.modelrunner.tensor.Tensor} from {@link org.tensorflow.Tensor}
+ * {@link TensorBuilder}. Converts {@link io.bioimage.modelrunner.tensor.Tensor} into {@link org.tensorflow.Tensor}
+ * 
+ * @author Carlos Garcia Lopez de Haro and Daniel Felipe Gonzalez Obando
+ */
 public class Tensorflow2Interface implements DeepLearningEngineInterface {
 
 	private static final String[] MODEL_TAGS = { "serve", "inference", "train",
@@ -88,13 +105,25 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		"tf.saved_model.signature_constants.SUPERVISED_EVAL_METHOD_NAME" };
 
 	/**
-	 * The loaded Tensorflow 1 model
+	 * The loaded Tensorflow 2 model
 	 */
 	private static SavedModelBundle model;
+	/**
+	 * Internal object of the Tensorflow model
+	 */
 	private static SignatureDef sig;
 
+	/**
+	 * Constructor for the interface. It is going to be called from the 
+	 * dlmodel-runner
+	 */
 	public Tensorflow2Interface() {}
 
+	/**
+	 * {@inheritDoc}
+	 * 
+     * Load a Tensorflow 2 model. 
+	 */
 	@Override
 	public void loadModel(String modelFolder, String modelSource)
 		throws LoadModelException
@@ -110,6 +139,13 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * Run a Tensorflow 2 model on the data provided by the {@link Tensor} input list
+	 * and modifies the output list with the results obtained
+	 * 
+	 */
 	@Override
 	public void run(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors)
 		throws RunModelException
@@ -132,7 +168,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		List<org.tensorflow.Tensor<?>> resultPatchTensors = runner.run();
 
 		// Fill the agnostic output tensors list with data from the inference result
-		outputTensors = fillOutputTensors(resultPatchTensors, outputTensors);
+		fillOutputTensors(resultPatchTensors, outputTensors);
 		// Close the remaining resources
 		session.close();
 		for (org.tensorflow.Tensor<?> tt : inTensors) {
@@ -147,13 +183,16 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	 * Create the list a list of output tensors agnostic to the Deep Learning
 	 * engine that can be readable by Deep Icy
 	 * 
-	 * @param outputNDArrays an NDList containing NDArrays (tensors)
-	 * @param outputNDArrays the names given to the tensors by the model
-	 * @return a list with Deep Learning framework agnostic tensors
+	 * @param outputTfTensors 
+	 * 	a list of Tensorflow 2 {@link org.tensorflow.Tensor}, the tensors are the
+	 * 	outputs of the model
+	 * @param outputTensors 
+	 * 	list of {@link Tensor} that is going to be filled with the data from the
+	 * 	output Tensorflow 2 {@link org.tensorflow.Tensor} of the model executed
 	 * @throws RunModelException If the number of tensors expected is not the same
 	 *           as the number of Tensors outputed by the model
 	 */
-	public static List<Tensor<?>> fillOutputTensors(
+	public static void fillOutputTensors(
 		List<org.tensorflow.Tensor<?>> outputNDArrays,
 		List<Tensor<?>> outputTensors) throws RunModelException
 	{
@@ -162,9 +201,12 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		for (int i = 0; i < outputNDArrays.size(); i++) {
 			outputTensors.get(i).setData(ImgLib2Builder.build(outputNDArrays.get(i)));
 		}
-		return outputTensors;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * Close the model once it is not needed and set it to null
+	 */
 	@Override
 	public void closeModel() {
 		sig = null;
