@@ -112,7 +112,7 @@ public final class TensorBuilder {
 		RandomAccessibleInterval<T> array) throws IllegalArgumentException
 	{
 		if (Util.getTypeFromInterval(array) instanceof ByteType) {
-			return buildByte((RandomAccessibleInterval<ByteType>) array);
+			return buildUByte((RandomAccessibleInterval<ByteType>) array);
 		}
 		else if (Util.getTypeFromInterval(array) instanceof IntType) {
 			return buildInt((RandomAccessibleInterval<IntType>) array);
@@ -142,7 +142,7 @@ public final class TensorBuilder {
 	 * @throws IllegalArgumentException if the input {@link RandomAccessibleInterval} type is
 	 * not compatible
 	 */
-	private static Tensor<TUint8> buildByte(
+	private static Tensor<TUint8> buildUByte(
 		RandomAccessibleInterval<ByteType> imgTensor)
 		throws IllegalArgumentException
 	{
@@ -175,8 +175,8 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TUint8} from an
-	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
+	 * Creates a {@link Tensor} of type {@link TInt32} from an
+	 * {@link RandomAccessibleInterval} of type {@link IntType}
 	 * 
 	 * @param imgTensor 
 	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
@@ -216,8 +216,8 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TUint8} from an
-	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
+	 * Creates a {@link Tensor} of type {@link TInt64} from an
+	 * {@link RandomAccessibleInterval} of type {@link LongType}
 	 * 
 	 * @param imgTensor 
 	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
@@ -258,8 +258,8 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TUint8} from an
-	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
+	 * Creates a {@link Tensor} of type {@link TFloat32} from an
+	 * {@link RandomAccessibleInterval} of type {@link FloatType}
 	 * 
 	 * @param imgTensor 
 	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
@@ -300,8 +300,8 @@ public final class TensorBuilder {
 	}
 
 	/**
-	 * Creates a {@link Tensor} of type {@link TUint8} from an
-	 * {@link RandomAccessibleInterval} of type {@link UnsignedByteType}
+	 * Creates a {@link Tensor} of type {@link TFloat64} from an
+	 * {@link RandomAccessibleInterval} of type {@link DoubleType}
 	 * 
 	 * @param imgTensor 
 	 * 	The {@link RandomAccessibleInterval} to fill the tensor with.
