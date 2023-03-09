@@ -193,13 +193,13 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	 *           as the number of Tensors outputed by the model
 	 */
 	public static void fillOutputTensors(
-		List<org.tensorflow.Tensor<?>> outputNDArrays,
+		List<org.tensorflow.Tensor<?>> outputTfTensors,
 		List<Tensor<?>> outputTensors) throws RunModelException
 	{
-		if (outputNDArrays.size() != outputTensors.size())
-			throw new RunModelException(outputNDArrays.size(), outputTensors.size());
-		for (int i = 0; i < outputNDArrays.size(); i++) {
-			outputTensors.get(i).setData(ImgLib2Builder.build(outputNDArrays.get(i)));
+		if (outputTfTensors.size() != outputTensors.size())
+			throw new RunModelException(outputTfTensors.size(), outputTensors.size());
+		for (int i = 0; i < outputTfTensors.size(); i++) {
+			outputTensors.get(i).setData(ImgLib2Builder.build(outputTfTensors.get(i)));
 		}
 	}
 
