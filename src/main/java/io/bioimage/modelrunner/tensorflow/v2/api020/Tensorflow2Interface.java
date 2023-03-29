@@ -47,9 +47,15 @@ import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.mappedbuffer.MappedBu
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -63,7 +69,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.tensorflow.SavedModelBundle;
@@ -188,7 +193,6 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     	if (true || (isWin && isIntel)) {
     		interprocessing = true;
     		tmpDir = getTemporaryDir();
-    		
     	}
     }
 	
@@ -205,12 +209,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     	if (!doInterprocessing) {
     		interprocessing = false;
     	} else {
-    		boolean isMac = PlatformDetection.isMacOS();
+    		boolean isWin = PlatformDetection.isMacOS();
         	boolean isIntel = new PlatformDetection().getArch().equals(PlatformDetection.ARCH_X86_64);
-        	if (isMac && isIntel) {
+        	if (isWin && isIntel) {
         		interprocessing = true;
-        		tmpDir = getTemporaryDir();
-        		
+        		tmpDir = getTemporaryDir();        		
         	}
     	}
     }
@@ -227,11 +230,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	public void loadModel(String modelFolder, String modelSource)
 		throws LoadModelException
 	{
-		if (interprocessing) {
-			this.modelFolder = modelFolder;
+		this.modelFolder = modelFolder;
+		if (interprocessing) 
 			return;
-		}
-		model = SavedModelBundle.load(modelFolder, "serve");
+		
+		model = SavedModelBundle.load(this.modelFolder, "serve");
 		byte[] byteGraph = model.metaGraphDef().toByteArray();
 		try {
 			sig = MetaGraphDef.parseFrom(byteGraph).getSignatureDefOrThrow(
@@ -298,18 +301,16 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	public void runInterprocessing(List<Tensor<?>> inputTensors, List<Tensor<?>> outputTensors) throws RunModelException {
 		createTensorsForInterprocessing(inputTensors);
 		createTensorsForInterprocessing(outputTensors);
-		List<String> args = getProcessCommandsWithoutArgs();
-		args.add(modelFolder);
-		args.add(this.tmpDir);
-		for (Tensor tensor : inputTensors) {args.add(getFilename4Tensor(tensor.getName()) + INPUT_FILE_TERMINATION);}
-		for (Tensor tensor : outputTensors) {args.add(getFilename4Tensor(tensor.getName()) + OUTPUT_FILE_TERMINATION);}
-		ProcessBuilder builder = new ProcessBuilder(args);
-        Process process;
 		try {
-			process = builder.inheritIO().start();
+			List<String> args = getProcessCommandsWithoutArgs();
+			for (Tensor tensor : inputTensors) {args.add(getFilename4Tensor(tensor.getName()) + INPUT_FILE_TERMINATION);}
+			for (Tensor tensor : outputTensors) {args.add(getFilename4Tensor(tensor.getName()) + OUTPUT_FILE_TERMINATION);}
+			ProcessBuilder builder = new ProcessBuilder(args);
+	        Process process = builder.start();
 	        if (process.waitFor() != 0)
-	        	throw new RunModelException("Error executing the Tensorflow 2 model in"
-	        			+ " a separate process. The process was not terminated correctly.");
+	    		throw new RunModelException("Error executing the Tensorflow 2 model in"
+	        			+ " a separate process. The process was not terminated correctly."
+	        			+ System.lineSeparator() + readProcessStringOutput(process));
 		} catch (RunModelException e) {
 			closeModel();
 			throw e;
@@ -592,38 +593,58 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	 * Create the arguments needed to execute tensorflow1 in another 
 	 * process with the corresponding tensors
 	 * @return the command used to call the separate process
+	 * @throws IOException if the command needed to execute interprocessing is too long
+	 * @throws URISyntaxException if there is any error with the URIs retreived from the classes
 	 */
-	private List<String> getProcessCommandsWithoutArgs() {
+	private List<String> getProcessCommandsWithoutArgs() throws IOException, URISyntaxException {
 		String javaHome = System.getProperty("java.home");
         String javaBin = javaHome +  File.separator + "bin" + File.separator + "java";
-        String classpath = System.getProperty("java.class.path");
-        while (classpath.contains(";;"))
-        	classpath = classpath.replace(";;", ";");
-        String[] allClasspath = classpath.split(";");
-        classpath = "";
-        Pattern imglib2Pattern = Pattern.compile(".*imglib2-.*\\.jar$");
-        Pattern modelrunnerPattern = Pattern.compile(".*dl-modelrunner-.*\\.jar$");
-        
-        for (String clsStr : allClasspath) {
-        	if (clsStr.contains("model-runner"))
-        		classpath += clsStr + File.pathSeparator;
-        	if ( modelrunnerPattern.matcher(clsStr).find() 
-        			|| imglib2Pattern.matcher(clsStr).find() )
-        		classpath += clsStr + File.pathSeparator;
-        }
+
+        String modelrunnerPath = getPathFromClass(DeepLearningEngineInterface.class);
+        String imglib2Path = getPathFromClass(NativeType.class);
+        String classpath =  modelrunnerPath + File.pathSeparator + imglib2Path + File.pathSeparator;
         ProtectionDomain protectionDomain = Tensorflow2Interface.class.getProtectionDomain();
         CodeSource codeSource = protectionDomain.getCodeSource();
-        String className = Tensorflow2Interface.class.getName();
-        classpath += File.pathSeparator;
         for (File ff : new File(codeSource.getLocation().getPath()).getParentFile().listFiles()) {
         	classpath += ff.getAbsolutePath() + File.pathSeparator;
         }
+        String className = Tensorflow2Interface.class.getName();
         List<String> command = new LinkedList<String>();
         command.add(javaBin);
         command.add("-cp");
         command.add(classpath);
         command.add(className);
+        command.add(modelFolder);
+        command.add(this.tmpDir);
         return command;
+	}
+	
+	/**
+	 * Method that gets the path to the JAR from where a specific class is being loaded
+	 * @param clazz
+	 * 	class of interest
+	 * @return the path to the JAR that contains the class
+	 * @throws UnsupportedEncodingException if the url of the JAR is not encoded in UTF-8
+	 */
+	private static String getPathFromClass(Class<?> clazz) throws UnsupportedEncodingException {
+	    String classResource = clazz.getName().replace('.', '/') + ".class";
+	    URL resourceUrl = clazz.getClassLoader().getResource(classResource);
+	    if (resourceUrl == null) {
+	        return null;
+	    }
+	    String urlString = resourceUrl.toString();
+	    if (urlString.startsWith("jar:")) {
+	        urlString = urlString.substring(4);
+	    }
+	    if (urlString.startsWith("file:/")) {
+	        urlString = urlString.substring(6);
+	    }
+	    urlString = URLDecoder.decode(urlString, "UTF-8");
+	    File file = new File(urlString);
+	    String path = file.getAbsolutePath();
+	    if (path.lastIndexOf(".jar!") != -1)
+	    	path = path.substring(0, path.lastIndexOf(".jar!")) + ".jar";
+	    return path;
 	}
 	
 	/**
@@ -710,5 +731,26 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     	map.put(INPUTS_MAP_KEY, inputNames);
     	map.put(OUTPUTS_MAP_KEY, outputNames);
     	return map;
+    }
+    
+    /**
+     * MEthod to obtain the String output of the process in case something goes wrong
+     * @param process
+     * 	the process that executed the TF2 model
+     * @return the String output that we would have seen on the terminal
+     * @throws IOException if the output of the terminal cannot be seen
+     */
+    private static String readProcessStringOutput(Process process) throws IOException {
+    	BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader bufferedErrReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		String text = "";
+		String line;
+	    while ((line = bufferedErrReader.readLine()) != null) {
+	    	text += line + System.lineSeparator();
+	    }
+	    while ((line = bufferedReader.readLine()) != null) {
+	    	text += line + System.lineSeparator();
+	    }
+	    return text;
     }
 }
