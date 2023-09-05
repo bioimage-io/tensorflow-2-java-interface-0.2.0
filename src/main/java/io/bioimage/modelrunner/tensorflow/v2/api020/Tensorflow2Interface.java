@@ -180,7 +180,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     public Tensorflow2Interface() throws IOException
     {
     	boolean isWin = PlatformDetection.isWindows();
-    	boolean isIntel = new PlatformDetection().getArch().equals(PlatformDetection.ARCH_X86_64);
+    	boolean isIntel = PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64);
     	if (true || (isWin && isIntel)) {
     		interprocessing = true;
     		tmpDir = getTemporaryDir();
@@ -201,7 +201,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     		interprocessing = false;
     	} else {
     		boolean isWin = PlatformDetection.isMacOS();
-        	boolean isIntel = new PlatformDetection().getArch().equals(PlatformDetection.ARCH_X86_64);
+        	boolean isIntel = PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64);
         	if (isWin && isIntel) {
         		interprocessing = true;
         		tmpDir = getTemporaryDir();        		
