@@ -31,7 +31,6 @@ import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.ImgLib2Builder;
 import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.TensorBuilder;
 import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.mappedbuffer.ImgLib2ToMappedBuffer;
 import io.bioimage.modelrunner.tensorflow.v2.api020.tensor.mappedbuffer.MappedBufferToImgLib2;
-import io.bioimage.modelrunner.tensorflow.v2.api030.Tensorflow2Interface;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
