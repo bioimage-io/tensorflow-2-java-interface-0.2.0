@@ -22,7 +22,7 @@ package io.bioimage.modelrunner.tensorflow.v2.api020.tensor;
 
 
 import io.bioimage.modelrunner.tensor.Utils;
-
+import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.Type;
@@ -31,6 +31,8 @@ import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+
+import java.util.Arrays;
 
 import org.tensorflow.Tensor;
 import org.tensorflow.types.TFloat32;
@@ -95,6 +97,9 @@ public final class ImgLib2Builder
     private static RandomAccessibleInterval<UnsignedByteType> buildFromTensorUByte(Tensor<TUint8> tensor)
     {
     	long[] arrayShape = tensor.shape().asArray();
+		if (CommonUtils.int32Overflows(arrayShape, 1))
+			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
+					+ " is too big. Max number of elements per double ubyte tensor supported: " + Integer.MAX_VALUE / 1);
 		long[] tensorShape = new long[arrayShape.length];
 		for (int i = 0; i < arrayShape.length; i ++) tensorShape[i] = arrayShape[arrayShape.length - 1 - i];
 		int totalSize = 1;
@@ -115,6 +120,9 @@ public final class ImgLib2Builder
     private static RandomAccessibleInterval<IntType> buildFromTensorInt(Tensor<TInt32> tensor)
     {
     	long[] arrayShape = tensor.shape().asArray();
+		if (CommonUtils.int32Overflows(arrayShape, 4))
+			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
+					+ " is too big. Max number of elements per int output tensor supported: " + Integer.MAX_VALUE / 4);
 		long[] tensorShape = new long[arrayShape.length];
 		for (int i = 0; i < arrayShape.length; i ++) tensorShape[i] = arrayShape[arrayShape.length - 1 - i];
 		int totalSize = 1;
@@ -135,6 +143,9 @@ public final class ImgLib2Builder
     private static RandomAccessibleInterval<FloatType> buildFromTensorFloat(Tensor<TFloat32> tensor)
     {
     	long[] arrayShape = tensor.shape().asArray();
+		if (CommonUtils.int32Overflows(arrayShape, 4))
+			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
+					+ " is too big. Max number of elements per float output tensor supported: " + Integer.MAX_VALUE / 4);
 		long[] tensorShape = new long[arrayShape.length];
 		for (int i = 0; i < arrayShape.length; i ++) tensorShape[i] = arrayShape[arrayShape.length - 1 - i];
 		int totalSize = 1;
@@ -155,6 +166,9 @@ public final class ImgLib2Builder
     private static RandomAccessibleInterval<DoubleType> buildFromTensorDouble(Tensor<TFloat64> tensor)
     {
     	long[] arrayShape = tensor.shape().asArray();
+		if (CommonUtils.int32Overflows(arrayShape, 8))
+			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
+					+ " is too big. Max number of elements per double output tensor supported: " + Integer.MAX_VALUE / 8);
 		long[] tensorShape = new long[arrayShape.length];
 		for (int i = 0; i < arrayShape.length; i ++) tensorShape[i] = arrayShape[arrayShape.length - 1 - i];
 		int totalSize = 1;
@@ -175,6 +189,9 @@ public final class ImgLib2Builder
     private static  RandomAccessibleInterval<LongType> buildFromTensorLong(Tensor<TInt64> tensor)
     {
     	long[] arrayShape = tensor.shape().asArray();
+		if (CommonUtils.int32Overflows(arrayShape, 8))
+			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
+					+ " is too big. Max number of elements per long output tensor supported: " + Integer.MAX_VALUE / 8);
 		long[] tensorShape = new long[arrayShape.length];
 		for (int i = 0; i < arrayShape.length; i ++) tensorShape[i] = arrayShape[arrayShape.length - 1 - i];
 		int totalSize = 1;
