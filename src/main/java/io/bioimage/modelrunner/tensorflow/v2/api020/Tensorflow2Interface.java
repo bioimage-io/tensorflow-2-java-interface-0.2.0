@@ -278,9 +278,17 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 			String source = descriptor.getWeights().gettAllSupportedWeightObjects().stream()
 					.filter(ww -> ww.getFramework().equals(EngineInfo.getBioimageioTfKey()))
 					.findFirst().get().getSource();
-			source = DownloadModel.getFileNameFromURLString(source);
-			System.out.println("Unzipping model...");
-			ZipUtils.unzipFolder(modelFolder + File.separator + source, modelFolder);
+			if (new File(source).isFile()) {
+				System.out.println("Unzipping model...");
+				ZipUtils.unzipFolder(new File(source).getAbsolutePath(), modelFolder);
+			} else if (new File(modelFolder, source).isFile()) {
+				System.out.println("Unzipping model...");
+				ZipUtils.unzipFolder(new File(modelFolder, source).getAbsolutePath(), modelFolder);
+			} else {
+				source = DownloadModel.getFileNameFromURLString(source);
+				System.out.println("Unzipping model...");
+				ZipUtils.unzipFolder(modelFolder + File.separator + source, modelFolder);
+			}
 		} else {
 			throw new LoadModelException("No model file was found in the model folder");
 		}
@@ -498,6 +506,9 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
      * @throws RunModelException	if there is any error running the model
      */
     public static void main(String[] args) throws LoadModelException, IOException, RunModelException {
+    	Tensorflow2Interface tt = new Tensorflow2Interface(false);
+    	
+    	tt.loadModel("/home/carlos/Desktop/Fiji.app/models/model_03bioimageio", null);
     	// Unpack the args needed
     	if (args.length < 4)
     		throw new IllegalArgumentException("Error exectuting Tensorflow 2, "
