@@ -198,7 +198,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 				"serving_default");
 		}
 		catch (InvalidProtocolBufferException e) {
-			System.out.println("Invalid graph");
+			throw new LoadModelException(Types.stackTrace(e));
 		}
 	}
 	
