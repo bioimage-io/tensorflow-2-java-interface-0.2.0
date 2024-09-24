@@ -26,7 +26,9 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
@@ -76,8 +78,9 @@ public final class TensorBuilder {
 	 * @throws IllegalArgumentException If the type of the {@link io.bioimage.modelrunner.tensor.Tensor}
 	 * is not supported
 	 */
-	public static Tensor<? extends TType> build(
-		io.bioimage.modelrunner.tensor.Tensor tensor)
+	public static <T extends RealType<T> & NativeType<T>>
+	Tensor<? extends TType> build(
+		io.bioimage.modelrunner.tensor.Tensor<T> tensor)
 		throws IllegalArgumentException
 	{
 		return build(tensor.getData());
@@ -133,7 +136,7 @@ public final class TensorBuilder {
 	private static Tensor<TUint8> buildUByte(
 		RandomAccessibleInterval<UnsignedByteType> tensor)
 		throws IllegalArgumentException
-	{
+	{		
 		long[] ogShape = tensor.dimensionsAsLongArray();
 		if (CommonUtils.int32Overflows(ogShape, 1))
 			throw new IllegalArgumentException("Provided tensor with shape " + Arrays.toString(ogShape) 
