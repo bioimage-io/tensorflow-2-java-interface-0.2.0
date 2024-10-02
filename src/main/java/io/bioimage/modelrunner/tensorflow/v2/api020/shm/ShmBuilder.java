@@ -73,14 +73,19 @@ public final class ShmBuilder
         {
             case TUint8.NAME:
             	buildFromTensorUByte((Tensor<TUint8>) tensor, memoryName);
+            	break;
             case TInt32.NAME:
             	buildFromTensorInt((Tensor<TInt32>) tensor, memoryName);
+            	break;
             case TFloat32.NAME:
             	buildFromTensorFloat((Tensor<TFloat32>) tensor, memoryName);
+            	break;
             case TFloat64.NAME:
             	buildFromTensorDouble((Tensor<TFloat64>) tensor, memoryName);
+            	break;
             case TInt64.NAME:
             	buildFromTensorLong((Tensor<TInt64>) tensor, memoryName);
+            	break;
             default:
                 throw new IllegalArgumentException("Unsupported tensor type: " + tensor.dataType().name());
         }
