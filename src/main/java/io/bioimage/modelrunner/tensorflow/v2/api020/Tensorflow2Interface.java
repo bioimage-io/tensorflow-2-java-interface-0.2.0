@@ -211,8 +211,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 			throw new RuntimeException();
 		else if (task.status == TaskStatus.FAILED)
 			throw new RuntimeException();
-		else if (task.status == TaskStatus.CRASHED)
+		else if (task.status == TaskStatus.CRASHED) {
+			this.runner.close();
+			runner = null;
 			throw new RuntimeException();
+		}
 	}
 	
 	/**
@@ -368,8 +371,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 				throw new RuntimeException();
 			else if (task.status == TaskStatus.FAILED)
 				throw new RuntimeException();
-			else if (task.status == TaskStatus.CRASHED)
+			else if (task.status == TaskStatus.CRASHED) {
+				this.runner.close();
+				runner = null;
 				throw new RuntimeException();
+			}
 			for (int i = 0; i < outputTensors.size(); i ++) {
 	        	String name = (String) Types.decode(encOuts.get(i)).get(MEM_NAME_KEY);
 	        	SharedMemoryArray shm = shmaOutputList.stream()
@@ -499,8 +505,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 				throw new RuntimeException();
 			else if (task.status == TaskStatus.FAILED)
 				throw new RuntimeException();
-			else if (task.status == TaskStatus.CRASHED)
+			else if (task.status == TaskStatus.CRASHED) {
+				this.runner.close();
+				runner = null;
 				throw new RuntimeException();
+			}
 			this.runner.close();
 			this.runner = null;
 			return;
