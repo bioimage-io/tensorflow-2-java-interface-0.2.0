@@ -98,8 +98,11 @@ public final class ShmBuilder
 			throw new IllegalArgumentException("Model output tensor with shape " + Arrays.toString(arrayShape) 
 					+ " is too big. Max number of elements per ubyte output tensor supported: " + Integer.MAX_VALUE / 1);
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new UnsignedByteType(), false, true);
-        ByteBuffer buff1 = shma.getDataBufferNoHeader();
-        tensor.rawData().read(buff1.array(), 0, buff1.capacity());
+        ByteBuffer buff = shma.getDataBufferNoHeader();
+        byte[] flat = new byte[buff.capacity()];
+        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        tensor.rawData().read(flat, 0, buff.capacity());
+        buff = buff2;
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -111,8 +114,11 @@ public final class ShmBuilder
 					+ " is too big. Max number of elements per int output tensor supported: " + Integer.MAX_VALUE / 4);
 
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new IntType(), false, true);
-        ByteBuffer buff1 = shma.getDataBufferNoHeader();
-        tensor.rawData().read(buff1.array(), 0, buff1.capacity());
+        ByteBuffer buff = shma.getDataBufferNoHeader();
+        byte[] flat = new byte[buff.capacity()];
+        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        tensor.rawData().read(flat, 0, buff.capacity());
+        buff = buff2;
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -124,8 +130,11 @@ public final class ShmBuilder
 					+ " is too big. Max number of elements per float output tensor supported: " + Integer.MAX_VALUE / 4);
 
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new FloatType(), false, true);
-        ByteBuffer buff1 = shma.getDataBufferNoHeader();
-        tensor.rawData().read(buff1.array(), 0, buff1.capacity());
+        ByteBuffer buff = shma.getDataBufferNoHeader();
+        byte[] flat = new byte[buff.capacity()];
+        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        tensor.rawData().read(flat, 0, buff.capacity());
+        buff = buff2;
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -137,8 +146,11 @@ public final class ShmBuilder
 					+ " is too big. Max number of elements per double output tensor supported: " + Integer.MAX_VALUE / 8);
 
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new DoubleType(), false, true);
-        ByteBuffer buff1 = shma.getDataBufferNoHeader();
-        tensor.rawData().read(buff1.array(), 0, buff1.capacity());
+        ByteBuffer buff = shma.getDataBufferNoHeader();
+        byte[] flat = new byte[buff.capacity()];
+        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        tensor.rawData().read(flat, 0, buff.capacity());
+        buff = buff2;
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -151,8 +163,11 @@ public final class ShmBuilder
 		
 
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new LongType(), false, true);
-        ByteBuffer buff1 = shma.getDataBufferNoHeader();
-        tensor.rawData().read(buff1.array(), 0, buff1.capacity());
+        ByteBuffer buff = shma.getDataBufferNoHeader();
+        byte[] flat = new byte[buff.capacity()];
+        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        tensor.rawData().read(flat, 0, buff.capacity());
+        buff = buff2;
         if (PlatformDetection.isWindows()) shma.close();
     }
 }
