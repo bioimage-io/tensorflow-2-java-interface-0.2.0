@@ -70,6 +70,7 @@ import org.tensorflow.Session;
 import org.tensorflow.proto.framework.MetaGraphDef;
 import org.tensorflow.proto.framework.SignatureDef;
 import org.tensorflow.proto.framework.TensorInfo;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * Class to that communicates with the dl-model runner, see 
@@ -653,6 +654,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
         String gsonPath = getPathFromClass(Gson.class);
         String jnaPath = getPathFromClass(com.sun.jna.Library.class);
         String jnaPlatformPath = getPathFromClass(com.sun.jna.platform.FileUtils.class);
+        String snakeYaml = getPathFromClass(Yaml.class);
         if (modelrunnerPath == null || (modelrunnerPath.endsWith("DeepLearningEngineInterface.class") 
         		&& !modelrunnerPath.contains(File.pathSeparator)))
         	modelrunnerPath = System.getProperty("java.class.path");
@@ -660,6 +662,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
         classpath =  classpath + gsonPath + File.pathSeparator;
         classpath =  classpath + jnaPath + File.pathSeparator;
         classpath =  classpath + jnaPlatformPath + File.pathSeparator;
+        classpath =  classpath + snakeYaml + File.pathSeparator;
 
         return classpath;
     }
