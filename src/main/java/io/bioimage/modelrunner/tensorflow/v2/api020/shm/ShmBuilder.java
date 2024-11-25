@@ -26,6 +26,7 @@ import io.bioimage.modelrunner.utils.CommonUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.tensorflow.Tensor;
@@ -100,9 +101,9 @@ public final class ShmBuilder
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new UnsignedByteType(), false, true);
         ByteBuffer buff = shma.getDataBufferNoHeader();
         byte[] flat = new byte[buff.capacity()];
-        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        ByteBuffer buff2 = ByteBuffer.wrap(flat).order(ByteOrder.LITTLE_ENDIAN);
         tensor.rawData().read(flat, 0, buff.capacity());
-        buff = buff2;
+        buff.put(buff2);
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -116,9 +117,9 @@ public final class ShmBuilder
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new IntType(), false, true);
         ByteBuffer buff = shma.getDataBufferNoHeader();
         byte[] flat = new byte[buff.capacity()];
-        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        ByteBuffer buff2 = ByteBuffer.wrap(flat).order(ByteOrder.LITTLE_ENDIAN);
         tensor.rawData().read(flat, 0, buff.capacity());
-        buff = buff2;
+        buff.put(buff2);
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -132,9 +133,9 @@ public final class ShmBuilder
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new FloatType(), false, true);
         ByteBuffer buff = shma.getDataBufferNoHeader();
         byte[] flat = new byte[buff.capacity()];
-        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        ByteBuffer buff2 = ByteBuffer.wrap(flat).order(ByteOrder.LITTLE_ENDIAN);
         tensor.rawData().read(flat, 0, buff.capacity());
-        buff = buff2;
+        buff.put(buff2);
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -148,9 +149,9 @@ public final class ShmBuilder
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new DoubleType(), false, true);
         ByteBuffer buff = shma.getDataBufferNoHeader();
         byte[] flat = new byte[buff.capacity()];
-        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        ByteBuffer buff2 = ByteBuffer.wrap(flat).order(ByteOrder.LITTLE_ENDIAN);
         tensor.rawData().read(flat, 0, buff.capacity());
-        buff = buff2;
+        buff.put(buff2);
         if (PlatformDetection.isWindows()) shma.close();
     }
 
@@ -165,9 +166,9 @@ public final class ShmBuilder
         SharedMemoryArray shma = SharedMemoryArray.readOrCreate(memoryName, arrayShape, new LongType(), false, true);
         ByteBuffer buff = shma.getDataBufferNoHeader();
         byte[] flat = new byte[buff.capacity()];
-        ByteBuffer buff2 = ByteBuffer.wrap(flat);
+        ByteBuffer buff2 = ByteBuffer.wrap(flat).order(ByteOrder.LITTLE_ENDIAN);
         tensor.rawData().read(flat, 0, buff.capacity());
-        buff = buff2;
+        buff.put(buff2);
         if (PlatformDetection.isWindows()) shma.close();
     }
 }
