@@ -344,9 +344,10 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		for (int i = 0; i < resultPatchTensors.size(); i++) {
 			try {
 				rais.add(ImgLib2Builder.build(resultPatchTensors.get(i)));
+				resultPatchTensors.get(i).close();
 			} catch (IllegalArgumentException ex) {
-				for (org.tensorflow.Tensor<?> tt : resultPatchTensors)
-					tt.close();
+				for (int j = i; j < resultPatchTensors.size(); j++)
+					resultPatchTensors.get(j).close();
 				throw new RunModelException(Types.stackTrace(ex));
 			}
 		}
@@ -425,6 +426,9 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 			String name = SharedMemoryArray.createShmName();
 			ShmBuilder.build(resultPatchTensors.get(i), name, false);
 			shmaNamesList.add(name);
+		}
+		for (org.tensorflow.Tensor<?> tt : resultPatchTensors) {
+			tt.close();
 		}
 		return shmaNamesList;
 	}
