@@ -307,6 +307,51 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 			tt.close();
 		}
 	}
+
+	@Override
+	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>> List<RandomAccessibleInterval<R>> inference(
+			List<RandomAccessibleInterval<T>> inputs) throws RunModelException {
+		if (interprocessing) {
+			return runInterprocessing(inputs);
+		}
+		Session session = model.session();
+		Session.Runner runner = session.runner();
+		List<String> inputListNames = new ArrayList<String>();
+		List<org.tensorflow.Tensor<?>> inTensors = new ArrayList<org.tensorflow.Tensor<?>>();
+		int c = 0;
+		for (RandomAccessibleInterval<T> tt : inputs) {
+			org.tensorflow.Tensor<?> inT = TensorBuilder.build(tt);
+			inTensors.add(inT);
+			String inputName = getModelInputName("input" + c, c ++);
+			runner.feed(inputName, inT);
+		}
+		c = 0;
+		List<String> outputInfo = sig.getOutputsMap().values().stream()
+				.map(nn -> {
+					String name = nn.getName();
+					if (name.endsWith(":0"))
+						return name.substring(0, name.length() - 2);
+					return name;
+				}).collect(Collectors.toList());
+
+		for (String name : outputInfo)
+			runner = runner.fetch(name);
+		// Run runner
+		List<org.tensorflow.Tensor<?>> resultPatchTensors = runner.run();
+		for (org.tensorflow.Tensor<?> tt : inTensors)
+			tt.close();
+		List<RandomAccessibleInterval<R>> rais = new ArrayList<RandomAccessibleInterval<R>>();
+		for (int i = 0; i < resultPatchTensors.size(); i++) {
+			try {
+				rais.add(ImgLib2Builder.build(resultPatchTensors.get(i)));
+			} catch (IllegalArgumentException ex) {
+				for (org.tensorflow.Tensor<?> tt : resultPatchTensors)
+					tt.close();
+				throw new RunModelException(Types.stackTrace(ex));
+			}
+		}
+		return rais;
+	}
 	
 	protected void runFromShmas(List<String> inputs, List<String> outputs) throws IOException {
 		Session session = model.session();
@@ -343,6 +388,45 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		for (org.tensorflow.Tensor<?> tt : resultPatchTensors) {
 			tt.close();
 		}
+	}
+	
+	protected List<String> inferenceFromShmas(List<String> inputs) throws IOException, RunModelException {
+		Session session = model.session();
+		Session.Runner runner = session.runner();
+		List<org.tensorflow.Tensor<?>> inTensors =
+			new ArrayList<org.tensorflow.Tensor<?>>();
+		int c = 0;
+		for (String ee : inputs) {
+			Map<String, Object> decoded = Types.decode(ee);
+			SharedMemoryArray shma = SharedMemoryArray.read((String) decoded.get(MEM_NAME_KEY));
+			org.tensorflow.Tensor<?> inT = io.bioimage.modelrunner.tensorflow.v2.api020.shm.TensorBuilder.build(shma);
+			if (PlatformDetection.isWindows()) shma.close();
+			inTensors.add(inT);
+			String inputName = getModelInputName((String) decoded.get(NAME_KEY), c ++);
+			runner.feed(inputName, inT);
+		}
+		List<String> outputInfo = sig.getOutputsMap().values().stream()
+				.map(nn -> {
+					String name = nn.getName();
+					if (name.endsWith(":0"))
+						return name.substring(0, name.length() - 2);
+					return name;
+				}).collect(Collectors.toList());
+
+		for (String name : outputInfo)
+			runner = runner.fetch(name);
+		// Run runner
+		List<org.tensorflow.Tensor<?>> resultPatchTensors = runner.run();
+		for (org.tensorflow.Tensor<?> tt : inTensors)
+			tt.close();
+
+		shmaNamesList = new ArrayList<String>();
+		for (int i = 0; i < resultPatchTensors.size(); i ++) {
+			String name = SharedMemoryArray.createShmName();
+			ShmBuilder.build(resultPatchTensors.get(i), name, false);
+			shmaNamesList.add(name);
+		}
+		return shmaNamesList;
 	}
 	
 	/**
@@ -397,7 +481,89 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		closeShmas();
 	}
 	
-	private void closeShmas() {
+	private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	List<RandomAccessibleInterval<R>> runInterprocessing(List<RandomAccessibleInterval<T>> inputs) throws RunModelException {
+		shmaInputList = new ArrayList<SharedMemoryArray>();
+		List<String> encIns = new ArrayList<String>();
+		Gson gson = new Gson();
+		for (RandomAccessibleInterval<T> tt : inputs) {
+			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(tt, false, true);
+			shmaInputList.add(shma);
+			HashMap<String, Object> map = new HashMap<String, Object>();
+			map.put(SHAPE_KEY, tt.dimensionsAsLongArray());
+			map.put(DTYPE_KEY, CommonUtils.getDataTypeFromRAI(tt));
+			map.put(IS_INPUT_KEY, true);
+			map.put(MEM_NAME_KEY, shma.getName());
+			encIns.add(gson.toJson(map));
+		}
+		LinkedHashMap<String, Object> args = new LinkedHashMap<String, Object>();
+		args.put("inputs", encIns);
+
+		try {
+			Task task = runner.task("inference", args);
+			task.waitFor();
+			if (task.status == TaskStatus.CANCELED)
+				throw new RuntimeException();
+			else if (task.status == TaskStatus.FAILED)
+				throw new RuntimeException(task.error);
+			else if (task.status == TaskStatus.CRASHED) {
+				this.runner.close();
+				runner = null;
+				throw new RuntimeException(task.error);
+			} else if (task.outputs == null)
+				throw new RuntimeException("No outputs generated");
+			List<String> outputs = (List<String>) task.outputs.get("encoded");
+			List<RandomAccessibleInterval<R>> rais = new ArrayList<RandomAccessibleInterval<R>>();
+			for (String out : outputs) {
+	        	String name = (String) Types.decode(out).get(MEM_NAME_KEY);
+	        	SharedMemoryArray shm = SharedMemoryArray.read(name);
+	        	RandomAccessibleInterval<R> rai = shm.getSharedRAI();
+	        	rais.add(Tensor.createCopyOfRaiInWantedDataType(Cast.unchecked(rai), Util.getTypeFromInterval(Cast.unchecked(rai))));
+	        	shm.close();
+			}
+			closeShmas();
+			return rais;
+		} catch (Exception e) {
+			closeShmas();
+			if (e instanceof RunModelException)
+				throw (RunModelException) e;
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+	
+	private void closeInterprocess() throws RunModelException {
+		try {
+			Task task = runner.task("closeTensors");
+			task.waitFor();
+			if (task.status == TaskStatus.CANCELED)
+				throw new RuntimeException();
+			else if (task.status == TaskStatus.FAILED)
+				throw new RuntimeException(task.error);
+			else if (task.status == TaskStatus.CRASHED) {
+				this.runner.close();
+				runner = null;
+				throw new RuntimeException(task.error);
+			}
+		} catch (Exception e) {
+			if (e instanceof RunModelException)
+				throw (RunModelException) e;
+			throw new RunModelException(Types.stackTrace(e));
+		}
+	}
+	
+	protected void closeFromInterp() {
+		if (!PlatformDetection.isWindows())
+			return;
+		this.shmaNamesList.stream().forEach(nn -> {
+			try {
+				SharedMemoryArray.read(nn).close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+	}
+	
+	private void closeShmas() throws RunModelException {
 		shmaInputList.forEach(shm -> {
 			try { shm.close(); } catch (IOException e1) { e1.printStackTrace();}
 		});
@@ -406,8 +572,9 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 			try { shm.close(); } catch (IOException e1) { e1.printStackTrace();}
 		});
 		shmaOutputList = null;
-	}
-	
+		if (interprocessing)
+			closeInterprocess();
+	}	
 	
 	private <T extends RealType<T> & NativeType<T>> List<String> encodeInputs(List<Tensor<T>> inputTensors) {
 		List<String> encodedInputTensors = new ArrayList<String>();
