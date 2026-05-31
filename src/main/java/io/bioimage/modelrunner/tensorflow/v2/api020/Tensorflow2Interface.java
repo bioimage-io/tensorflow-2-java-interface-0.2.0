@@ -23,12 +23,6 @@ package io.bioimage.modelrunner.tensorflow.v2.api020;
 import com.google.gson.Gson;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import org.apposed.appose.Service;
-import org.apposed.appose.Service.Task;
-import org.apposed.appose.Service.TaskStatus;
-import org.apposed.appose.TaskException;
-import org.apposed.appose.util.Messages;
-
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.download.FileDownloader;
@@ -36,6 +30,10 @@ import io.bioimage.modelrunner.engine.DeepLearningEngineInterface;
 import io.bioimage.modelrunner.engine.EngineInfo;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.javaworker.Messages;
+import io.bioimage.modelrunner.javaworker.NoGroovyJavaService;
+import io.bioimage.modelrunner.javaworker.NoGroovyTask;
+import io.bioimage.modelrunner.javaworker.NoGroovyTask.TaskStatus;
 import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
@@ -127,7 +125,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
     /**
      * Process where the model is being loaded and executed
      */
-    Service runner;
+    NoGroovyJavaService runner;
     
     /**
      * TODO the interprocessing is executed for every OS
@@ -160,12 +158,10 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		}
     }
     
-    private Service getRunner() throws IOException, URISyntaxException {
+    private NoGroovyJavaService getRunner() throws IOException, URISyntaxException {
 		List<String> args = getProcessCommandsWithoutArgs();
-		String[] argArr = new String[args.size()];
-		args.toArray(argArr);
 
-		return new Service(new File("."), argArr);
+		return new NoGroovyJavaService(new File("."), null, args);
     }
 
     /**
@@ -184,7 +180,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		if (interprocessing) {
 			try {
 				launchModelLoadOnProcess();
-			} catch (IOException | InterruptedException | TaskException e) {
+			} catch (IOException | InterruptedException e) {
 				throw new LoadModelException(Messages.stackTrace(e));
 			}
 			return;
@@ -205,10 +201,10 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		}
 	}
 	
-	private void launchModelLoadOnProcess() throws IOException, InterruptedException, TaskException {
+	private void launchModelLoadOnProcess() throws IOException, InterruptedException {
 		HashMap<String, Object> args = new HashMap<String, Object>();
 		args.put("modelFolder", modelFolder);
-		Task task = runner.task("loadModel", args);
+		NoGroovyTask task = runner.task("loadModel", args);
 		task.waitFor();
 		if (task.status == TaskStatus.CANCELED)
 			throw new RuntimeException();
@@ -456,7 +452,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		args.put("outputs", encOuts);
 
 		try {
-			Task task = runner.task("inference", args);
+			NoGroovyTask task = runner.task("inference", args);
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
 				throw new RuntimeException();
@@ -506,7 +502,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 		args.put("inputs", encIns);
 
 		try {
-			Task task = runner.task("inference", args);
+			NoGroovyTask task = runner.task("inference", args);
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
 				throw new RuntimeException();
@@ -539,7 +535,7 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	
 	private void closeInterprocess() throws RunModelException {
 		try {
-			Task task = runner.task("closeTensors");
+			NoGroovyTask task = runner.task("closeTensors");
 			task.waitFor();
 			if (task.status == TaskStatus.CANCELED)
 				throw new RuntimeException();
@@ -655,11 +651,11 @@ public class Tensorflow2Interface implements DeepLearningEngineInterface {
 	@Override
 	public void closeModel() {
 		if (this.interprocessing && runner != null) {
-			Task task;
+			NoGroovyTask task;
 			try {
 				task = runner.task("close");
 				task.waitFor();
-			} catch (InterruptedException | TaskException e) {
+			} catch (IOException | InterruptedException e) {
 				throw new RuntimeException(Messages.stackTrace(e));
 			}
 			if (task.status == TaskStatus.CANCELED)
